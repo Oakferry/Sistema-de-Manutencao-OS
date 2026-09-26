@@ -2,14 +2,12 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package br.com.manutencao.domain.exception;
+package br.com.manutencao.domain.usuario;
 
 /**
  *
  * @author farin
  */
-public class DomainException extends RuntimeException {
-    public DomainException(String message){
-        super(message);
-    }
+public class Tecnico {
+    
 }

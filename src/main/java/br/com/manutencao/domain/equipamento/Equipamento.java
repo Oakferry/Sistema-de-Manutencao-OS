@@ -3,7 +3,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package br.com.manutencao.domain.equipamento;
-
+import br.com.manutencao.domain.exception.DomainException;
 /**
  *
  * @author farin
@@ -24,6 +24,8 @@ public class Equipamento {
             String descricao,
             String tipo,
             String identificador) {
+        
+        validarDados(nome, descricao, tipo, identificador);
 
         this.id = id;
         this.nome = nome;
@@ -40,7 +42,13 @@ public class Equipamento {
             String tipo,
             String identificador,
             StatusEquipamento status) {
+        
+    validarDados(nome, descricao, tipo, identificador);
 
+    if(status == null){
+        throw new DomainException("Status do equipamento é obrigatório");
+    }
+        
         this.id = id;
         this.nome = nome;
         this.descricao = descricao;
@@ -61,6 +69,28 @@ public class Equipamento {
         this.identificador = identificador;
     }
 
+    private void validarDados(
+        String nome,
+        String descricao,
+        String tipo,
+        String identificador){
+        
+            if (nome == null || nome.isBlank()){
+                throw new DomainException("Nome do equipamento é obrigatório.");
+            }
+            if (descricao == null || descricao.isBlank()) {
+                throw new DomainException("Descrição do equipamento é obrigatória.");
+            }
+
+            if (tipo == null || tipo.isBlank()) {
+                throw new DomainException("Tipo do equipamento é obrigatório.");
+            }
+            if (identificador == null || identificador.isBlank()){
+                throw new DomainException("Identificador do equipamento é obrigatório.");
+            }
+                        
+    }
+    
     public void ativar() {
         this.status = StatusEquipamento.ATIVO;
     }
@@ -92,4 +122,6 @@ public class Equipamento {
     public StatusEquipamento getStatus() {
         return status;
     }
+    
+    
 }
