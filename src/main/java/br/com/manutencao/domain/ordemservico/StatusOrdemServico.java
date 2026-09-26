@@ -14,6 +14,7 @@ public enum StatusOrdemServico {
     EM_EXECUCAO,
     AGUARDANDO_PECA,
     AGUARDANDO_APROVACAO,
+    REPARO_FINALIZADO,
     ENCERRADA,
     CANCELADA
-}
+    }
