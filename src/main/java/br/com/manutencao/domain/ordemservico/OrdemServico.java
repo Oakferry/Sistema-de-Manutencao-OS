@@ -336,4 +336,5 @@ public class OrdemServico {
     public List<Intervencao> getIntervencoes() {
         return Collections.unmodifiableList(intervencoes);
     }
+      
 }
