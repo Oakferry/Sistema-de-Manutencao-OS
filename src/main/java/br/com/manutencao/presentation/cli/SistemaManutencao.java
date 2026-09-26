@@ -1,16 +1,28 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- */
-
 package br.com.manutencao.presentation.cli;
 
-/**
- *
- * @author farin
- */
+import br.com.manutencao.infrastructure.persistence.sqlite.DatabaseInitializer;
+import java.sql.SQLException;
+
 public class SistemaManutencao {
 
     public static void main(String[] args) {
-        System.out.println("Hello World!");
+
+        try {
+
+            DatabaseInitializer.initialize();
+
+            System.out.println(
+                    "Banco de dados inicializado com sucesso."
+            );
+
+        } catch (SQLException e) {
+
+            System.out.println(
+                    "Erro ao inicializar banco de dados: "
+                    + e.getMessage()
+            );
+
+            e.printStackTrace();
+        }
     }
 }

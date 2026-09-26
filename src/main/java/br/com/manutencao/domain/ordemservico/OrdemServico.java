@@ -36,47 +36,73 @@ public class OrdemServico {
     private final List<Intervencao> intervencoes;
 
     public OrdemServico(
-            Long id,
-            Equipamento equipamento,
-            Usuario usuarioAbertura,
-            String descricaoProblema,
-            Criticidade criticidade) {
+        Long id,
+        Equipamento equipamento,
+        Usuario usuarioAbertura,
+        String descricaoProblema,
+        Criticidade criticidade,
+        StatusOrdemServico status,
+        LocalDateTime dataAbertura,
+        LocalDateTime dataEncerramento,
+        Tecnico tecnicoResponsavel,
+        Diagnostico diagnostico,
+        List<Intervencao> intervencoes) {
 
-        if (equipamento == null) {
-            throw new DomainException(
-                    "Equipamento da ordem de serviço é obrigatório."
-            );
-        }
-
-        if (usuarioAbertura == null) {
-            throw new DomainException(
-                    "Usuário responsável pela abertura é obrigatório."
-            );
-        }
-
-        if (descricaoProblema == null || descricaoProblema.isBlank()) {
-            throw new DomainException(
-                    "Descrição do problema é obrigatória."
-            );
-        }
-
-        if (criticidade == null) {
-            throw new DomainException(
-                    "Criticidade da ordem de serviço é obrigatória."
-            );
-        }
-
-        this.id = id;
-        this.equipamento = equipamento;
-        this.usuarioAbertura = usuarioAbertura;
-        this.descricaoProblema = descricaoProblema;
-        this.criticidade = criticidade;
-
-        this.status = StatusOrdemServico.ABERTA;
-        this.dataAbertura = LocalDateTime.now();
-
-        this.intervencoes = new ArrayList<>();
+    if (equipamento == null) {
+        throw new DomainException(
+                "Equipamento é obrigatório."
+        );
     }
+
+    if (usuarioAbertura == null) {
+        throw new DomainException(
+                "Usuário de abertura é obrigatório."
+        );
+    }
+
+    if (descricaoProblema == null
+            || descricaoProblema.isBlank()) {
+
+        throw new DomainException(
+                "Descrição do problema é obrigatória."
+        );
+    }
+
+    if (criticidade == null) {
+        throw new DomainException(
+                "Criticidade é obrigatória."
+        );
+    }
+
+    if (status == null) {
+        throw new DomainException(
+                "Status da ordem de serviço é obrigatório."
+        );
+    }
+
+    if (dataAbertura == null) {
+        throw new DomainException(
+                "Data de abertura é obrigatória."
+        );
+    }
+
+    this.id = id;
+    this.equipamento = equipamento;
+    this.usuarioAbertura = usuarioAbertura;
+    this.descricaoProblema = descricaoProblema;
+    this.criticidade = criticidade;
+    this.status = status;
+    this.dataAbertura = dataAbertura;
+    this.dataEncerramento = dataEncerramento;
+    this.tecnicoResponsavel = tecnicoResponsavel;
+    this.diagnostico = diagnostico;
+
+    this.intervencoes = new ArrayList<>();
+
+    if (intervencoes != null) {
+        this.intervencoes.addAll(intervencoes);
+    }
+}
 
     public void atribuirTecnico(Tecnico tecnico) {
 
