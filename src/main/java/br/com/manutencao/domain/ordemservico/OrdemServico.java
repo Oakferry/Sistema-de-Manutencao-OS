@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package br.com.manutencao.domain.ordemservico;
 
 import br.com.manutencao.domain.equipamento.Equipamento;
@@ -9,15 +5,11 @@ import br.com.manutencao.domain.exception.DomainException;
 import br.com.manutencao.domain.usuario.Tecnico;
 import br.com.manutencao.domain.usuario.Usuario;
 
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-/**
- *
- * @author Caio FARINHA
- */
 
 public class OrdemServico {
 
@@ -29,80 +21,101 @@ public class OrdemServico {
     private StatusOrdemServico status;
     private LocalDateTime dataAbertura;
     private LocalDateTime dataEncerramento;
-
     private Tecnico tecnicoResponsavel;
     private Diagnostico diagnostico;
-
     private final List<Intervencao> intervencoes;
 
+    // =========================================================
+    // CONSTRUTOR 1
+    // Criação de uma nova OS
+    // =========================================================
     public OrdemServico(
-        Long id,
-        Equipamento equipamento,
-        Usuario usuarioAbertura,
-        String descricaoProblema,
-        Criticidade criticidade,
-        StatusOrdemServico status,
-        LocalDateTime dataAbertura,
-        LocalDateTime dataEncerramento,
-        Tecnico tecnicoResponsavel,
-        Diagnostico diagnostico,
-        List<Intervencao> intervencoes) {
+            Long id,
+            Equipamento equipamento,
+            Usuario usuarioAbertura,
+            String descricaoProblema,
+            Criticidade criticidade) {
 
-    if (equipamento == null) {
-        throw new DomainException(
-                "Equipamento é obrigatório."
+        validarDadosBasicos(
+                equipamento,
+                usuarioAbertura,
+                descricaoProblema,
+                criticidade
         );
+
+        this.id = id;
+        this.equipamento = equipamento;
+        this.usuarioAbertura = usuarioAbertura;
+        this.descricaoProblema = descricaoProblema;
+        this.criticidade = criticidade;
+
+        this.status = StatusOrdemServico.ABERTA;
+        this.dataAbertura = LocalDateTime.now();
+        this.dataEncerramento = null;
+
+        this.tecnicoResponsavel = null;
+        this.diagnostico = null;
+
+        this.intervencoes = new ArrayList<>();
     }
 
-    if (usuarioAbertura == null) {
-        throw new DomainException(
-                "Usuário de abertura é obrigatório."
+    // =========================================================
+    // CONSTRUTOR 2
+    // Reconstrução de uma OS já salva no banco
+    // =========================================================
+    public OrdemServico(
+            Long id,
+            Equipamento equipamento,
+            Usuario usuarioAbertura,
+            String descricaoProblema,
+            Criticidade criticidade,
+            StatusOrdemServico status,
+            LocalDateTime dataAbertura,
+            LocalDateTime dataEncerramento,
+            Tecnico tecnicoResponsavel,
+            Diagnostico diagnostico,
+            List<Intervencao> intervencoes) {
+
+        validarDadosBasicos(
+                equipamento,
+                usuarioAbertura,
+                descricaoProblema,
+                criticidade
         );
+
+        if (status == null) {
+            throw new DomainException(
+                    "Status da ordem de serviço é obrigatório."
+            );
+        }
+
+        if (dataAbertura == null) {
+            throw new DomainException(
+                    "Data de abertura é obrigatória."
+            );
+        }
+
+        this.id = id;
+        this.equipamento = equipamento;
+        this.usuarioAbertura = usuarioAbertura;
+        this.descricaoProblema = descricaoProblema;
+        this.criticidade = criticidade;
+        this.status = status;
+        this.dataAbertura = dataAbertura;
+        this.dataEncerramento = dataEncerramento;
+        this.tecnicoResponsavel = tecnicoResponsavel;
+        this.diagnostico = diagnostico;
+
+        this.intervencoes = new ArrayList<>();
+
+        if (intervencoes != null) {
+            this.intervencoes.addAll(intervencoes);
+        }
     }
 
-    if (descricaoProblema == null
-            || descricaoProblema.isBlank()) {
-
-        throw new DomainException(
-                "Descrição do problema é obrigatória."
-        );
-    }
-
-    if (criticidade == null) {
-        throw new DomainException(
-                "Criticidade é obrigatória."
-        );
-    }
-
-    if (status == null) {
-        throw new DomainException(
-                "Status da ordem de serviço é obrigatório."
-        );
-    }
-
-    if (dataAbertura == null) {
-        throw new DomainException(
-                "Data de abertura é obrigatória."
-        );
-    }
-
-    this.id = id;
-    this.equipamento = equipamento;
-    this.usuarioAbertura = usuarioAbertura;
-    this.descricaoProblema = descricaoProblema;
-    this.criticidade = criticidade;
-    this.status = status;
-    this.dataAbertura = dataAbertura;
-    this.dataEncerramento = dataEncerramento;
-    this.tecnicoResponsavel = tecnicoResponsavel;
-    this.diagnostico = diagnostico;
-
-    this.intervencoes = new ArrayList<>();
-
-    if (intervencoes != null) {
-        this.intervencoes.addAll(intervencoes);
-    }
-}
+    // =========================================================
+    // REGRAS DE NEGÓCIO
+    // =========================================================
 
     public void atribuirTecnico(Tecnico tecnico) {
 
@@ -141,7 +154,8 @@ public class OrdemServico {
         this.tecnicoResponsavel = novoTecnico;
     }
 
-    public void registrarDiagnostico(Diagnostico diagnostico) {
+    public void registrarDiagnostico(
+            Diagnostico diagnostico) {
 
         if (diagnostico == null) {
             throw new DomainException(
@@ -155,7 +169,9 @@ public class OrdemServico {
             );
         }
 
-        validarTecnicoResponsavel(diagnostico.getTecnico());
+        validarTecnicoResponsavel(
+                diagnostico.getTecnico()
+        );
 
         this.diagnostico = diagnostico;
     }
@@ -176,10 +192,12 @@ public class OrdemServico {
             );
         }
 
-        this.status = StatusOrdemServico.EM_EXECUCAO;
+        this.status =
+                StatusOrdemServico.EM_EXECUCAO;
     }
 
-    public void registrarIntervencao(Intervencao intervencao) {
+    public void registrarIntervencao(
+            Intervencao intervencao) {
 
         if (intervencao == null) {
             throw new DomainException(
@@ -193,9 +211,65 @@ public class OrdemServico {
             );
         }
 
-        validarTecnicoResponsavel(intervencao.getTecnico());
+        validarTecnicoResponsavel(
+                intervencao.getTecnico()
+        );
 
         intervencoes.add(intervencao);
+    }
+
+    public void adicionarMaterialIntervencao(
+            Tecnico tecnico,
+            Long intervencaoId,
+            MaterialUtilizado material) {
+
+        validarTecnicoResponsavel(tecnico);
+
+        if (status != StatusOrdemServico.EM_EXECUCAO) {
+            throw new DomainException(
+                    "Materiais só podem ser registrados durante a execução."
+            );
+        }
+
+        if (intervencaoId == null) {
+            throw new DomainException(
+                    "Intervenção é obrigatória."
+            );
+        }
+
+        if (material == null) {
+            throw new DomainException(
+                    "Material é obrigatório."
+            );
+        }
+
+        Intervencao intervencaoEncontrada = null;
+
+        for (Intervencao intervencao : intervencoes) {
+
+            if (intervencao.getId() != null
+                    && intervencao.getId().equals(intervencaoId)) {
+
+                intervencaoEncontrada =
+                        intervencao;
+
+                break;
+            }
+        }
+
+        if (intervencaoEncontrada == null) {
+            throw new DomainException(
+                    "Intervenção não encontrada na ordem de serviço."
+            );
+        }
+
+        validarTecnicoResponsavel(
+                intervencaoEncontrada.getTecnico()
+        );
+
+        intervencaoEncontrada.adicionarMaterial(
+                material
+        );
     }
 
     public void aguardarPeca(Tecnico tecnico) {
@@ -208,20 +282,24 @@ public class OrdemServico {
             );
         }
 
-        this.status = StatusOrdemServico.AGUARDANDO_PECA;
+        this.status =
+                StatusOrdemServico.AGUARDANDO_PECA;
     }
 
     public void retomarExecucao(Tecnico tecnico) {
 
         validarTecnicoResponsavel(tecnico);
 
-        if (status != StatusOrdemServico.AGUARDANDO_PECA) {
+        if (status
+                != StatusOrdemServico.AGUARDANDO_PECA) {
+
             throw new DomainException(
                     "Somente ordem aguardando peça pode retomar execução."
             );
         }
 
-        this.status = StatusOrdemServico.EM_EXECUCAO;
+        this.status =
+                StatusOrdemServico.EM_EXECUCAO;
     }
 
     public void finalizarReparo(Tecnico tecnico) {
@@ -240,32 +318,42 @@ public class OrdemServico {
             );
         }
 
-        this.status = StatusOrdemServico.REPARO_FINALIZADO;
+        this.status =
+                StatusOrdemServico.REPARO_FINALIZADO;
     }
 
-    public void submeterParaAprovacao(Tecnico tecnico) {
+    public void submeterParaAprovacao(
+            Tecnico tecnico) {
 
         validarTecnicoResponsavel(tecnico);
 
-        if (status != StatusOrdemServico.REPARO_FINALIZADO) {
+        if (status
+                != StatusOrdemServico.REPARO_FINALIZADO) {
+
             throw new DomainException(
                     "Somente reparo finalizado pode ser submetido para aprovação."
             );
         }
 
-        this.status = StatusOrdemServico.AGUARDANDO_APROVACAO;
+        this.status =
+                StatusOrdemServico.AGUARDANDO_APROVACAO;
     }
 
     public void encerrar() {
 
-        if (status != StatusOrdemServico.AGUARDANDO_APROVACAO) {
+        if (status
+                != StatusOrdemServico.AGUARDANDO_APROVACAO) {
+
             throw new DomainException(
                     "Somente ordem aguardando aprovação pode ser encerrada."
             );
         }
 
-        this.status = StatusOrdemServico.ENCERRADA;
-        this.dataEncerramento = LocalDateTime.now();
+        this.status =
+                StatusOrdemServico.ENCERRADA;
+
+        this.dataEncerramento =
+                LocalDateTime.now();
     }
 
     public void cancelar() {
@@ -282,10 +370,49 @@ public class OrdemServico {
             );
         }
 
-        this.status = StatusOrdemServico.CANCELADA;
+        this.status =
+                StatusOrdemServico.CANCELADA;
     }
 
-    private void validarTecnicoResponsavel(Tecnico tecnico) {
+    // =========================================================
+    // VALIDAÇÕES INTERNAS
+    // =========================================================
+
+    private void validarDadosBasicos(
+            Equipamento equipamento,
+            Usuario usuarioAbertura,
+            String descricaoProblema,
+            Criticidade criticidade) {
+
+        if (equipamento == null) {
+            throw new DomainException(
+                    "Equipamento é obrigatório."
+            );
+        }
+
+        if (usuarioAbertura == null) {
+            throw new DomainException(
+                    "Usuário de abertura é obrigatório."
+            );
+        }
+
+        if (descricaoProblema == null
+                || descricaoProblema.isBlank()) {
+
+            throw new DomainException(
+                    "Descrição do problema é obrigatória."
+            );
+        }
+
+        if (criticidade == null) {
+            throw new DomainException(
+                    "Criticidade é obrigatória."
+            );
+        }
+    }
+
+    private void validarTecnicoResponsavel(
+            Tecnico tecnico) {
 
         if (tecnico == null) {
             throw new DomainException(
@@ -299,25 +426,40 @@ public class OrdemServico {
             );
         }
 
-        if (!mesmoTecnico(tecnicoResponsavel, tecnico)) {
+        if (!mesmoTecnico(
+                tecnicoResponsavel,
+                tecnico)) {
+
             throw new DomainException(
                     "Somente o técnico responsável pode executar esta operação."
             );
         }
     }
 
-    private boolean mesmoTecnico(Tecnico primeiro, Tecnico segundo) {
+    private boolean mesmoTecnico(
+            Tecnico primeiro,
+            Tecnico segundo) {
 
         if (primeiro == segundo) {
             return true;
         }
 
-        if (primeiro.getId() == null || segundo.getId() == null) {
+        if (primeiro.getId() == null
+                || segundo.getId() == null) {
+
             return false;
         }
 
-        return primeiro.getId().equals(segundo.getId());
+        return primeiro
+                .getId()
+                .equals(
+                        segundo.getId()
+                );
     }
+
+    // =========================================================
+    // GETTERS
+    // =========================================================
 
     public Long getId() {
         return id;
@@ -360,7 +502,8 @@ public class OrdemServico {
     }
 
     public List<Intervencao> getIntervencoes() {
-        return Collections.unmodifiableList(intervencoes);
+        return Collections.unmodifiableList(
+                intervencoes
+        );
     }
-      
 }
