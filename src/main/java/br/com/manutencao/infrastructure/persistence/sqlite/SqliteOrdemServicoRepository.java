@@ -33,21 +33,29 @@ public class SqliteOrdemServicoRepository
     public OrdemServico salvar(
             OrdemServico ordemServico) {
 
+        boolean controlaTransacao =
+                !ConnectionFactory.possuiTransacaoAtiva();
+
         try (Connection connection =
                      ConnectionFactory.getConnection()) {
 
-            connection.setAutoCommit(false);
+            if (controlaTransacao) {
+                connection.setAutoCommit(false);
+            }
 
             try {
 
                 OrdemServico persistida;
 
                 if (ordemServico.getId() == null) {
+
                     persistida = inserir(
                             connection,
                             ordemServico
                     );
+
                 } else {
+
                     persistida = atualizar(
                             connection,
                             ordemServico
@@ -64,13 +72,24 @@ public class SqliteOrdemServicoRepository
                         persistida
                 );
 
-                connection.commit();
+                if (controlaTransacao) {
+                    connection.commit();
+                }
 
                 return persistida;
 
-            } catch (SQLException | RuntimeException e) {
+            } catch (SQLException | RuntimeException | Error e) {
 
-                connection.rollback();
+                if (controlaTransacao) {
+
+                    try {
+                        connection.rollback();
+
+                    } catch (SQLException rollbackException) {
+                        e.addSuppressed(rollbackException);
+                    }
+                }
+
                 throw e;
             }
 

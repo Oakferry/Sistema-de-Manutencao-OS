@@ -4,14 +4,18 @@ import br.com.manutencao.application.service.EquipamentoService;
 import br.com.manutencao.application.service.OrdemServicoService;
 import br.com.manutencao.application.service.TecnicoService;
 import br.com.manutencao.application.service.UsuarioService;
+import br.com.manutencao.application.transaction.GerenciadorTransacao;
 
 import br.com.manutencao.domain.repository.EquipamentoRepository;
+import br.com.manutencao.domain.repository.FilaTecnicoRepository;
 import br.com.manutencao.domain.repository.OrdemServicoRepository;
 import br.com.manutencao.domain.repository.TecnicoRepository;
 import br.com.manutencao.domain.repository.UsuarioRepository;
 
 import br.com.manutencao.infrastructure.persistence.sqlite.DatabaseInitializer;
 import br.com.manutencao.infrastructure.persistence.sqlite.SqliteEquipamentoRepository;
+import br.com.manutencao.infrastructure.persistence.sqlite.SqliteFilaTecnicoRepository;
+import br.com.manutencao.infrastructure.persistence.sqlite.SqliteGerenciadorTransacao;
 import br.com.manutencao.infrastructure.persistence.sqlite.SqliteOrdemServicoRepository;
 import br.com.manutencao.infrastructure.persistence.sqlite.SqliteTecnicoRepository;
 import br.com.manutencao.infrastructure.persistence.sqlite.SqliteUsuarioRepository;
@@ -22,10 +26,10 @@ public class SistemaManutencao {
 
         try {
 
-            // 1. Prepara o banco de dados
+            // 1. Inicializa a estrutura do banco.
             DatabaseInitializer.initialize();
 
-            // 2. Repositories concretos
+            // 2. Cria os repositories concretos.
             EquipamentoRepository equipamentoRepository =
                     new SqliteEquipamentoRepository();
 
@@ -38,7 +42,14 @@ public class SistemaManutencao {
             OrdemServicoRepository ordemServicoRepository =
                     new SqliteOrdemServicoRepository();
 
-            // 3. Services da aplicação
+            FilaTecnicoRepository filaTecnicoRepository =
+                    new SqliteFilaTecnicoRepository();
+
+            // 3. Cria o gerenciador de transações.
+            GerenciadorTransacao gerenciadorTransacao =
+                    new SqliteGerenciadorTransacao();
+
+            // 4. Conecta as dependências aos serviços.
             EquipamentoService equipamentoService =
                     new EquipamentoService(
                             equipamentoRepository,
@@ -61,10 +72,12 @@ public class SistemaManutencao {
                             ordemServicoRepository,
                             equipamentoRepository,
                             usuarioRepository,
-                            tecnicoRepository
+                            tecnicoRepository,
+                            filaTecnicoRepository,
+                            gerenciadorTransacao
                     );
 
-            // 4. Inicia a interface CLI
+            // 5. Inicia a interface de terminal.
             MenuPrincipal menuPrincipal =
                     new MenuPrincipal(
                             equipamentoService,
@@ -79,7 +92,7 @@ public class SistemaManutencao {
 
             System.out.println(
                     "Erro ao iniciar sistema: "
-                    + e.getMessage()
+                            + e.getMessage()
             );
 
             e.printStackTrace();

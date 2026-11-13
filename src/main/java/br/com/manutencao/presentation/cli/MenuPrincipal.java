@@ -8,6 +8,7 @@ import br.com.manutencao.domain.ordemservico.Criticidade;
 import br.com.manutencao.domain.ordemservico.OrdemServico;
 import br.com.manutencao.domain.usuario.PerfilUsuario;
 import br.com.manutencao.domain.usuario.Tecnico;
+import br.com.manutencao.application.dto.ResultadoAtribuicao;
 
 import java.util.Scanner;
 
@@ -1139,7 +1140,7 @@ public class MenuPrincipal {
         );
     }
 
-    private void atribuirTecnicoOrdemServico() {
+        private void atribuirTecnicoOrdemServico() {
 
         Long ordemId =
                 lerLong(
@@ -1156,17 +1157,47 @@ public class MenuPrincipal {
                         "ID do técnico: "
                 );
 
-        ordemServicoService.atribuirTecnico(
-                ordemId,
-                gestorId,
-                tecnicoId
-        );
+        ResultadoAtribuicao resultado =
+                ordemServicoService.atribuirTecnico(
+                        ordemId,
+                        gestorId,
+                        tecnicoId
+                );
 
-        System.out.println(
-                "Técnico atribuído."
-        );
+        System.out.println();
+
+        if (resultado.enfileirada()) {
+
+            System.out.println(
+                    "O técnico está atendendo a OS #"
+                            + resultado.ordemEmAtendimentoId()
+                            + "."
+            );
+
+            System.out.println(
+                    "A OS #"
+                            + resultado.ordemServico().getId()
+                            + " foi adicionada à fila de espera."
+            );
+
+            System.out.println(
+                    "Posição na fila: "
+                            + resultado.posicaoFila()
+            );
+
+        } else {
+
+            System.out.println(
+                    "Técnico atribuído à OS #"
+                            + resultado.ordemServico().getId()
+                            + "."
+            );
+
+            System.out.println(
+                    "Disponibilidade do técnico: EM_ATENDIMENTO."
+            );
+        }
     }
-
     private void reatribuirTecnicoOrdemServico() {
 
         Long ordemId =

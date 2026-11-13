@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Manutenção | Painel de operações</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/cadastros.js" defer></script>
+    <script src="/app.js" defer></script>
+</head>
+<body>
+    <header class="topo">
+        <div class="largura">
+            <span class="marca">Sistema de Manutenção</span>
+
+            <nav aria-label="Navegação principal">
+                <a href="#ordens">Ordens</a>
+                <a href="#fila">Fila dos técnicos</a>
+                <a href="#cadastros">Cadastros</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="largura">
+        <div class="linha abertura">
+            <div>
+                <p class="rotulo">Operações de manutenção</p>
+                <h1 id="titulo">Ordens de serviço</h1>
+            </div>
+
+            <button id="atualizar" class="secundario" type="button">
+                Atualizar dados
+            </button>
+        </div>
+
+        <p id="retorno" role="status" aria-live="polite">Carregando dados…</p>
+
+        <section id="ordens" class="tela">
+            <details class="painel" open>
+                <summary>Abrir nova ordem</summary>
+
+                <form id="abrir">
+                    <div class="grade">
+                        <label>
+                            Equipamento
+                            <select name="equipamentoId" required></select>
+                        </label>
+
+                        <label>
+                            Solicitante
+                            <select name="usuarioId" required></select>
+                        </label>
+
+                        <label>
+                            Criticidade
+                            <select name="criticidade" required></select>
+                        </label>
+                    </div>
+
+                    <label>
+                        Descrição do problema
+                        <textarea
+                            name="descricao"
+                            rows="3"
+                            maxlength="500"
+                            required
+                        ></textarea>
+                    </label>
+
+                    <button type="submit" disabled>Abrir ordem</button>
+                </form>
+            </details>
+
+            <div id="lista-ordens" class="lista"></div>
+        </section>
+
+        <section id="fila" class="tela" hidden>
+            <div id="lista-fila" class="lista"></div>
+        </section>
+
+        <section id="cadastros" class="tela" hidden>
+            <div id="lista-cadastros" class="lista"></div>
+        </section>
+    </main>
+
+    <dialog id="dialogo" aria-labelledby="titulo-acao">
+        <h2 id="titulo-acao">Atualizar ordem</h2>
+
+        <form id="form-acao">
+            <div id="campos-acao"></div>
+
+            <div class="botoes">
+                <button id="fechar" class="secundario" type="button">
+                    Voltar
+                </button>
+                <button type="submit">Confirmar</button>
+            </div>
+
+            <p id="erro-acao" class="erro" role="alert"></p>
+        </form>
+    </dialog>
+</body>
+</html>

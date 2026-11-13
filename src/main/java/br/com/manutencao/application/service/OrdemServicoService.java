@@ -1,15 +1,19 @@
 package br.com.manutencao.application.service;
 
+import br.com.manutencao.application.dto.ResultadoAtribuicao;
+import br.com.manutencao.application.transaction.GerenciadorTransacao;
 import br.com.manutencao.domain.equipamento.Equipamento;
 import br.com.manutencao.domain.equipamento.StatusEquipamento;
 import br.com.manutencao.domain.exception.DomainException;
 import br.com.manutencao.domain.ordemservico.Criticidade;
 import br.com.manutencao.domain.ordemservico.Diagnostico;
 import br.com.manutencao.domain.ordemservico.Intervencao;
+import br.com.manutencao.domain.ordemservico.ItemFilaTecnico;
 import br.com.manutencao.domain.ordemservico.MaterialUtilizado;
 import br.com.manutencao.domain.ordemservico.OrdemServico;
 import br.com.manutencao.domain.ordemservico.StatusOrdemServico;
 import br.com.manutencao.domain.repository.EquipamentoRepository;
+import br.com.manutencao.domain.repository.FilaTecnicoRepository;
 import br.com.manutencao.domain.repository.OrdemServicoRepository;
 import br.com.manutencao.domain.repository.TecnicoRepository;
 import br.com.manutencao.domain.repository.UsuarioRepository;
@@ -20,6 +24,8 @@ import br.com.manutencao.domain.usuario.Usuario;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 public class OrdemServicoService {
 
@@ -27,48 +33,35 @@ public class OrdemServicoService {
     private final EquipamentoRepository equipamentoRepository;
     private final UsuarioRepository usuarioRepository;
     private final TecnicoRepository tecnicoRepository;
+    private final FilaTecnicoRepository filaTecnicoRepository;
+    private final GerenciadorTransacao gerenciadorTransacao;
 
     public OrdemServicoService(
             OrdemServicoRepository ordemServicoRepository,
             EquipamentoRepository equipamentoRepository,
             UsuarioRepository usuarioRepository,
-            TecnicoRepository tecnicoRepository) {
+            TecnicoRepository tecnicoRepository,
+            FilaTecnicoRepository filaTecnicoRepository,
+            GerenciadorTransacao gerenciadorTransacao) {
 
-        if (ordemServicoRepository == null) {
-            throw new IllegalArgumentException(
-                    "OrdemServicoRepository é obrigatório."
-            );
-        }
-
-        if (equipamentoRepository == null) {
-            throw new IllegalArgumentException(
-                    "EquipamentoRepository é obrigatório."
-            );
-        }
-
-        if (usuarioRepository == null) {
-            throw new IllegalArgumentException(
-                    "UsuarioRepository é obrigatório."
-            );
-        }
-
-        if (tecnicoRepository == null) {
-            throw new IllegalArgumentException(
-                    "TecnicoRepository é obrigatório."
-            );
-        }
-
-        this.ordemServicoRepository =
-                ordemServicoRepository;
-
-        this.equipamentoRepository =
-                equipamentoRepository;
-
-        this.usuarioRepository =
-                usuarioRepository;
-
-        this.tecnicoRepository =
-                tecnicoRepository;
+        this.ordemServicoRepository = Objects.requireNonNull(
+                ordemServicoRepository, "OrdemServicoRepository é obrigatório."
+        );
+        this.equipamentoRepository = Objects.requireNonNull(
+                equipamentoRepository, "EquipamentoRepository é obrigatório."
+        );
+        this.usuarioRepository = Objects.requireNonNull(
+                usuarioRepository, "UsuarioRepository é obrigatório."
+        );
+        this.tecnicoRepository = Objects.requireNonNull(
+                tecnicoRepository, "TecnicoRepository é obrigatório."
+        );
+        this.filaTecnicoRepository = Objects.requireNonNull(
+                filaTecnicoRepository, "FilaTecnicoRepository é obrigatório."
+        );
+        this.gerenciadorTransacao = Objects.requireNonNull(
+                gerenciadorTransacao, "GerenciadorTransacao é obrigatório."
+        );
     }
 
     public OrdemServico abrirOrdemServico(
@@ -77,98 +70,128 @@ public class OrdemServicoService {
             String descricaoProblema,
             Criticidade criticidade) {
 
-        Equipamento equipamento =
-                equipamentoRepository
-                        .buscarPorId(equipamentoId)
-                        .orElseThrow(() ->
-                                new DomainException(
-                                        "Equipamento não encontrado."
-                                )
-                        );
+        Equipamento equipamento = equipamentoRepository
+                .buscarPorId(equipamentoId)
+                .orElseThrow(() ->
+                        new DomainException("Equipamento não encontrado.")
+                );
 
-        if (equipamento.getStatus()
-                != StatusEquipamento.ATIVO) {
-
+        if (equipamento.getStatus() != StatusEquipamento.ATIVO) {
             throw new DomainException(
                     "Não é possível abrir uma ordem de serviço "
-                    + "para equipamento inativo."
+                            + "para equipamento inativo."
             );
         }
 
-        Usuario usuario =
-                usuarioRepository
-                        .buscarPorId(usuarioAberturaId)
-                        .orElseThrow(() ->
-                                new DomainException(
-                                        "Usuário não encontrado."
-                                )
-                        );
-
-        OrdemServico ordemServico =
-                new OrdemServico(
-                        null,
-                        equipamento,
-                        usuario,
-                        descricaoProblema,
-                        criticidade
+        Usuario usuario = usuarioRepository
+                .buscarPorId(usuarioAberturaId)
+                .orElseThrow(() ->
+                        new DomainException("Usuário não encontrado.")
                 );
 
-        return ordemServicoRepository.salvar(
-                ordemServico
+        OrdemServico ordemServico = new OrdemServico(
+                null,
+                equipamento,
+                usuario,
+                descricaoProblema,
+                criticidade
         );
+
+        return ordemServicoRepository.salvar(ordemServico);
     }
 
     public OrdemServico buscarPorId(Long id) {
-
         return ordemServicoRepository
                 .buscarPorId(id)
                 .orElseThrow(() ->
-                        new DomainException(
-                                "Ordem de serviço não encontrada."
-                        )
+                        new DomainException("Ordem de serviço não encontrada.")
                 );
     }
 
     public List<OrdemServico> listarTodos() {
-
         return ordemServicoRepository.listarTodos();
     }
 
-    public List<OrdemServico> listarPorStatus(
-            StatusOrdemServico status) {
-
-        return ordemServicoRepository
-                .listarPorStatus(status);
+    public List<OrdemServico> listarPorStatus(StatusOrdemServico status) {
+        return ordemServicoRepository.listarPorStatus(status);
     }
 
-    public OrdemServico atribuirTecnico(
+    public ResultadoAtribuicao atribuirTecnico(
             Long ordemServicoId,
             Long gestorId,
             Long tecnicoId) {
 
-        buscarUsuarioGestor(gestorId);
+        return gerenciadorTransacao.executar(() -> {
+            buscarUsuarioGestor(gestorId);
 
-        Tecnico tecnico =
-                buscarTecnico(tecnicoId);
+            Tecnico tecnico = buscarTecnico(tecnicoId);
 
-        if (tecnico.getDisponibilidade()
-                == DisponibilidadeTecnico.AUSENTE) {
+            if (tecnico.getDisponibilidade() == DisponibilidadeTecnico.AUSENTE) {
+                throw new DomainException(
+                        "Técnico ausente não pode receber ordem de serviço."
+                );
+            }
 
-            throw new DomainException(
-                    "Técnico ausente não pode receber ordem de serviço."
-            );
-        }
+            OrdemServico ordemServico = buscarPorId(ordemServicoId);
 
-        OrdemServico ordemServico =
-                buscarPorId(ordemServicoId);
+            if (ordemServico.getStatus() != StatusOrdemServico.ABERTA
+                    || ordemServico.getTecnicoResponsavel() != null) {
+                throw new DomainException(
+                        "Somente uma OS aberta e sem técnico responsável "
+                                + "pode receber atribuição inicial."
+                );
+            }
 
-        ordemServico.atribuirTecnico(
-                tecnico
-        );
+            Optional<ItemFilaTecnico> entradaExistente =
+                    filaTecnicoRepository.buscarPorOrdemServico(ordemServicoId);
 
-        return ordemServicoRepository.salvar(
-                ordemServico
-        );
+            if (entradaExistente.isPresent()) {
+                throw new DomainException(
+                        "A OS já está na fila do técnico ID "
+                                + entradaExistente.get().getTecnicoId()
+                                + "."
+                );
+            }
+
+            Optional<OrdemServico> ordemAtiva =
+                    ordemServicoRepository.buscarAtivaPorTecnico(tecnicoId);
+
+            if (ordemAtiva.isPresent()) {
+                ItemFilaTecnico entrada = new ItemFilaTecnico(
+                        ordemServicoId, tecnicoId, gestorId
+                );
+
+                filaTecnicoRepository.salvar(entrada);
+
+                tecnico.entrarEmAtendimento();
+                tecnicoRepository.salvar(tecnico);
+
+                int posicao = filaTecnicoRepository
+                        .listarPorTecnico(tecnicoId)
+                        .size();
+
+                return new ResultadoAtribuicao(
+                        ordemServico, true, ordemAtiva.get().getId(), posicao
+                );
+            }
+
+            // Impede uma nova OS de ultrapassar entradas anteriores.
+            if (filaTecnicoRepository.buscarPrimeiroPorTecnico(tecnicoId).isPresent()) {
+                throw new DomainException(
+                        "O técnico possui uma fila pendente. "
+                                + "A primeira OS da fila deve ser "
+                                + "encaminhada antes de uma nova atribuição."
+                );
+            }
+
+            ordemServico.atribuirTecnico(tecnico);
+            OrdemServico persistida = ordemServicoRepository.salvar(ordemServico);
+
+            tecnico.entrarEmAtendimento();
+            tecnicoRepository.salvar(tecnico);
+
+            return new ResultadoAtribuicao(persistida, false, null, 0);
+        });
     }
 
     public OrdemServico reatribuirTecnico(
@@ -176,29 +199,71 @@ public class OrdemServicoService {
             Long gestorId,
             Long novoTecnicoId) {
 
-        buscarUsuarioGestor(gestorId);
+        return gerenciadorTransacao.executar(() -> {
+            buscarUsuarioGestor(gestorId);
 
-        Tecnico novoTecnico =
-                buscarTecnico(novoTecnicoId);
+            OrdemServico ordemServico = buscarPorId(ordemServicoId);
 
-        if (novoTecnico.getDisponibilidade()
-                == DisponibilidadeTecnico.AUSENTE) {
+            if (!ordemServico.getStatus().ocupaTecnico()) {
+                throw new DomainException(
+                        "Somente uma OS atribuída, em execução "
+                                + "ou aguardando peça pode trocar de técnico."
+                );
+            }
 
-            throw new DomainException(
-                    "Técnico ausente não pode receber ordem de serviço."
-            );
-        }
+            Tecnico responsavelAnterior = ordemServico.getTecnicoResponsavel();
 
-        OrdemServico ordemServico =
-                buscarPorId(ordemServicoId);
+            if (responsavelAnterior == null) {
+                throw new DomainException(
+                        "A OS não possui técnico responsável. "
+                                + "Utilize a atribuição inicial."
+                );
+            }
 
-        ordemServico.reatribuirTecnico(
-                novoTecnico
-        );
+            Tecnico novoTecnico = buscarTecnico(novoTecnicoId);
 
-        return ordemServicoRepository.salvar(
-                ordemServico
-        );
+            if (responsavelAnterior.getId().equals(novoTecnico.getId())) {
+                throw new DomainException(
+                        "Este técnico já é o responsável pela OS."
+                );
+            }
+
+            if (novoTecnico.getDisponibilidade() == DisponibilidadeTecnico.AUSENTE) {
+                throw new DomainException(
+                        "Técnico ausente não pode receber ordem de serviço."
+                );
+            }
+
+            Optional<OrdemServico> ordemAtiva =
+                    ordemServicoRepository.buscarAtivaPorTecnico(novoTecnicoId);
+
+            if (ordemAtiva.isPresent()) {
+                throw new DomainException(
+                        "O técnico está atendendo a OS #"
+                                + ordemAtiva.get().getId()
+                                + ". A reatribuição não foi realizada."
+                );
+            }
+
+            if (filaTecnicoRepository
+                    .buscarPrimeiroPorTecnico(novoTecnicoId)
+                    .isPresent()) {
+                throw new DomainException(
+                        "O técnico possui uma fila pendente. "
+                                + "A reatribuição não pode ultrapassar essa fila."
+                );
+            }
+
+            ordemServico.reatribuirTecnico(novoTecnico);
+            OrdemServico persistida = ordemServicoRepository.salvar(ordemServico);
+
+            novoTecnico.entrarEmAtendimento();
+            tecnicoRepository.salvar(novoTecnico);
+
+            encaminharProximaDaFila(buscarTecnico(responsavelAnterior.getId()));
+
+            return persistida;
+        });
     }
 
     public OrdemServico registrarDiagnostico(
@@ -207,46 +272,23 @@ public class OrdemServicoService {
             String parecer,
             String causaRaiz) {
 
-        Tecnico tecnico =
-                buscarTecnico(tecnicoId);
+        Tecnico tecnico = buscarTecnico(tecnicoId);
+        OrdemServico ordemServico = buscarPorId(ordemServicoId);
 
-        OrdemServico ordemServico =
-                buscarPorId(ordemServicoId);
-
-        Diagnostico diagnostico =
-                new Diagnostico(
-                        parecer,
-                        causaRaiz,
-                        LocalDateTime.now(),
-                        tecnico
-                );
-
-        ordemServico.registrarDiagnostico(
-                diagnostico
+        Diagnostico diagnostico = new Diagnostico(
+                parecer, causaRaiz, LocalDateTime.now(), tecnico
         );
 
-        return ordemServicoRepository.salvar(
-                ordemServico
-        );
+        ordemServico.registrarDiagnostico(diagnostico);
+        return ordemServicoRepository.salvar(ordemServico);
     }
 
-    public OrdemServico iniciarExecucao(
-            Long ordemServicoId,
-            Long tecnicoId) {
+    public OrdemServico iniciarExecucao(Long ordemServicoId, Long tecnicoId) {
+        Tecnico tecnico = buscarTecnico(tecnicoId);
+        OrdemServico ordemServico = buscarPorId(ordemServicoId);
 
-        Tecnico tecnico =
-                buscarTecnico(tecnicoId);
-
-        OrdemServico ordemServico =
-                buscarPorId(ordemServicoId);
-
-        ordemServico.iniciarExecucao(
-                tecnico
-        );
-
-        return ordemServicoRepository.salvar(
-                ordemServico
-        );
+        ordemServico.iniciarExecucao(tecnico);
+        return ordemServicoRepository.salvar(ordemServico);
     }
 
     public OrdemServico registrarIntervencao(
@@ -255,28 +297,15 @@ public class OrdemServicoService {
             String descricao,
             double horasTrabalhadas) {
 
-        Tecnico tecnico =
-                buscarTecnico(tecnicoId);
+        Tecnico tecnico = buscarTecnico(tecnicoId);
+        OrdemServico ordemServico = buscarPorId(ordemServicoId);
 
-        OrdemServico ordemServico =
-                buscarPorId(ordemServicoId);
-
-        Intervencao intervencao =
-                new Intervencao(
-                        null,
-                        LocalDateTime.now(),
-                        tecnico,
-                        descricao,
-                        horasTrabalhadas
-                );
-
-        ordemServico.registrarIntervencao(
-                intervencao
+        Intervencao intervencao = new Intervencao(
+                null, LocalDateTime.now(), tecnico, descricao, horasTrabalhadas
         );
 
-        return ordemServicoRepository.salvar(
-                ordemServico
-        );
+        ordemServico.registrarIntervencao(intervencao);
+        return ordemServicoRepository.salvar(ordemServico);
     }
 
     public OrdemServico adicionarMaterialIntervencao(
@@ -287,170 +316,163 @@ public class OrdemServicoService {
             double quantidade,
             String unidade) {
 
-        Tecnico tecnico =
-                buscarTecnico(tecnicoId);
+        Tecnico tecnico = buscarTecnico(tecnicoId);
+        OrdemServico ordemServico = buscarPorId(ordemServicoId);
 
-        OrdemServico ordemServico =
-                buscarPorId(ordemServicoId);
-
-        MaterialUtilizado material =
-                new MaterialUtilizado(
-                        descricao,
-                        quantidade,
-                        unidade
-                );
+        MaterialUtilizado material = new MaterialUtilizado(
+                descricao, quantidade, unidade
+        );
 
         ordemServico.adicionarMaterialIntervencao(
-                tecnico,
-                intervencaoId,
-                material
+                tecnico, intervencaoId, material
         );
 
-        return ordemServicoRepository.salvar(
-                ordemServico
-        );
+        return ordemServicoRepository.salvar(ordemServico);
     }
 
-    public OrdemServico aguardarPeca(
-            Long ordemServicoId,
-            Long tecnicoId) {
+    public OrdemServico aguardarPeca(Long ordemServicoId, Long tecnicoId) {
+        Tecnico tecnico = buscarTecnico(tecnicoId);
+        OrdemServico ordemServico = buscarPorId(ordemServicoId);
 
-        Tecnico tecnico =
-                buscarTecnico(tecnicoId);
-
-        OrdemServico ordemServico =
-                buscarPorId(ordemServicoId);
-
-        ordemServico.aguardarPeca(
-                tecnico
-        );
-
-        return ordemServicoRepository.salvar(
-                ordemServico
-        );
+        ordemServico.aguardarPeca(tecnico);
+        return ordemServicoRepository.salvar(ordemServico);
     }
 
-    public OrdemServico retomarExecucao(
-            Long ordemServicoId,
-            Long tecnicoId) {
+    public OrdemServico retomarExecucao(Long ordemServicoId, Long tecnicoId) {
+        Tecnico tecnico = buscarTecnico(tecnicoId);
+        OrdemServico ordemServico = buscarPorId(ordemServicoId);
 
-        Tecnico tecnico =
-                buscarTecnico(tecnicoId);
-
-        OrdemServico ordemServico =
-                buscarPorId(ordemServicoId);
-
-        ordemServico.retomarExecucao(
-                tecnico
-        );
-
-        return ordemServicoRepository.salvar(
-                ordemServico
-        );
+        ordemServico.retomarExecucao(tecnico);
+        return ordemServicoRepository.salvar(ordemServico);
     }
 
-    public OrdemServico finalizarReparo(
-            Long ordemServicoId,
-            Long tecnicoId) {
+    public OrdemServico finalizarReparo(Long ordemServicoId, Long tecnicoId) {
+        return gerenciadorTransacao.executar(() -> {
+            Tecnico tecnico = buscarTecnico(tecnicoId);
+            OrdemServico ordemServico = buscarPorId(ordemServicoId);
 
-        Tecnico tecnico =
-                buscarTecnico(tecnicoId);
+            ordemServico.finalizarReparo(tecnico);
+            OrdemServico persistida = ordemServicoRepository.salvar(ordemServico);
 
-        OrdemServico ordemServico =
-                buscarPorId(ordemServicoId);
+            encaminharProximaDaFila(tecnico);
 
-        ordemServico.finalizarReparo(
-                tecnico
-        );
-
-        return ordemServicoRepository.salvar(
-                ordemServico
-        );
+            return persistida;
+        });
     }
 
     public OrdemServico submeterParaAprovacao(
-            Long ordemServicoId,
-            Long tecnicoId) {
+            Long ordemServicoId, Long tecnicoId) {
 
-        Tecnico tecnico =
-                buscarTecnico(tecnicoId);
+        Tecnico tecnico = buscarTecnico(tecnicoId);
+        OrdemServico ordemServico = buscarPorId(ordemServicoId);
 
-        OrdemServico ordemServico =
-                buscarPorId(ordemServicoId);
-
-        ordemServico.submeterParaAprovacao(
-                tecnico
-        );
-
-        return ordemServicoRepository.salvar(
-                ordemServico
-        );
+        ordemServico.submeterParaAprovacao(tecnico);
+        return ordemServicoRepository.salvar(ordemServico);
     }
 
-    public OrdemServico encerrar(
-            Long ordemServicoId,
-            Long gestorId) {
-
+    public OrdemServico encerrar(Long ordemServicoId, Long gestorId) {
         buscarUsuarioGestor(gestorId);
-
-        OrdemServico ordemServico =
-                buscarPorId(ordemServicoId);
+        OrdemServico ordemServico = buscarPorId(ordemServicoId);
 
         ordemServico.encerrar();
-
-        return ordemServicoRepository.salvar(
-                ordemServico
-        );
+        return ordemServicoRepository.salvar(ordemServico);
     }
 
-    public OrdemServico cancelar(
-            Long ordemServicoId,
-            Long gestorId) {
+    public OrdemServico cancelar(Long ordemServicoId, Long gestorId) {
+        return gerenciadorTransacao.executar(() -> {
+            buscarUsuarioGestor(gestorId);
 
-        buscarUsuarioGestor(gestorId);
+            OrdemServico ordemServico = buscarPorId(ordemServicoId);
+            boolean ocupavaTecnico = ordemServico.getStatus().ocupaTecnico();
+            Tecnico responsavel = ordemServico.getTecnicoResponsavel();
 
-        OrdemServico ordemServico =
-                buscarPorId(ordemServicoId);
+            Optional<ItemFilaTecnico> entradaNaFila =
+                    filaTecnicoRepository.buscarPorOrdemServico(ordemServicoId);
 
-        ordemServico.cancelar();
+            ordemServico.cancelar();
+            OrdemServico persistida = ordemServicoRepository.salvar(ordemServico);
 
-        return ordemServicoRepository.salvar(
-                ordemServico
-        );
+            if (entradaNaFila.isPresent()) {
+                filaTecnicoRepository.removerPorOrdemServico(ordemServicoId);
+            }
+
+            if (ocupavaTecnico && responsavel != null) {
+                encaminharProximaDaFila(buscarTecnico(responsavel.getId()));
+            } else if (entradaNaFila.isPresent()) {
+                encaminharProximaDaFila(
+                        buscarTecnico(entradaNaFila.get().getTecnicoId())
+                );
+            }
+
+            return persistida;
+        });
     }
 
-    private Usuario buscarUsuarioGestor(
-            Long usuarioId) {
+    // Deve ser chamado dentro de uma transação compartilhada.
+    private void encaminharProximaDaFila(Tecnico tecnico) {
+        if (tecnico.getDisponibilidade() == DisponibilidadeTecnico.AUSENTE) {
+            return;
+        }
 
-        Usuario usuario =
-                usuarioRepository
-                        .buscarPorId(usuarioId)
-                        .orElseThrow(() ->
-                                new DomainException(
-                                        "Usuário não encontrado."
-                                )
-                        );
+        Long tecnicoId = tecnico.getId();
 
-        if (usuario.getPerfil()
-                != PerfilUsuario.GESTOR) {
+        Optional<OrdemServico> ordemAtiva =
+                ordemServicoRepository.buscarAtivaPorTecnico(tecnicoId);
 
+        if (ordemAtiva.isPresent()) {
+            tecnico.entrarEmAtendimento();
+            tecnicoRepository.salvar(tecnico);
+            return;
+        }
+
+        Optional<ItemFilaTecnico> primeiraEntrada =
+                filaTecnicoRepository.buscarPrimeiroPorTecnico(tecnicoId);
+
+        if (primeiraEntrada.isEmpty()) {
+            tecnico.ficarDisponivel();
+            tecnicoRepository.salvar(tecnico);
+            return;
+        }
+
+        ItemFilaTecnico entrada = primeiraEntrada.get();
+        OrdemServico proximaOrdem = buscarPorId(entrada.getOrdemServicoId());
+
+        if (proximaOrdem.getStatus() != StatusOrdemServico.ABERTA
+                || proximaOrdem.getTecnicoResponsavel() != null) {
             throw new DomainException(
-                    "Esta operação exige perfil GESTOR."
+                    "Não foi possível encaminhar a fila: a OS #"
+                            + proximaOrdem.getId()
+                            + " precisa estar aberta e sem responsável."
             );
+        }
+
+        proximaOrdem.atribuirTecnico(tecnico);
+        ordemServicoRepository.salvar(proximaOrdem);
+        filaTecnicoRepository.removerPorOrdemServico(proximaOrdem.getId());
+
+        tecnico.entrarEmAtendimento();
+        tecnicoRepository.salvar(tecnico);
+    }
+
+    private Usuario buscarUsuarioGestor(Long usuarioId) {
+        Usuario usuario = usuarioRepository
+                .buscarPorId(usuarioId)
+                .orElseThrow(() ->
+                        new DomainException("Usuário não encontrado.")
+                );
+
+        if (usuario.getPerfil() != PerfilUsuario.GESTOR) {
+            throw new DomainException("Esta operação exige perfil GESTOR.");
         }
 
         return usuario;
     }
 
-    private Tecnico buscarTecnico(
-            Long tecnicoId) {
-
+    private Tecnico buscarTecnico(Long tecnicoId) {
         return tecnicoRepository
                 .buscarPorId(tecnicoId)
                 .orElseThrow(() ->
-                        new DomainException(
-                                "Técnico não encontrado."
-                        )
+                        new DomainException("Técnico não encontrado.")
                 );
     }
 }
